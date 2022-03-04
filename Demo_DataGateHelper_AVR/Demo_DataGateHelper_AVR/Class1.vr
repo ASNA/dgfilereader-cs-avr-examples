@@ -1,0 +1,98 @@
+﻿Using System
+Using System.Collections.Generic
+Using ASNA.DataGateHelper
+
+BegClass Program
+
+	BegSr Main Shared(*Yes) Access(*Public) Attributes(System.STAThread())
+		DclSrParm args Type(*String) Rank(1)
+
+        DclFld t1 Type(Tester) New()
+        DclFld t2 Type(TesterWithClass) New()
+        t1.Run()
+        t2.Run()
+
+        Console.WriteLine('Press any key to continue...') 
+        Console.ReadKey() 
+	EndSr
+
+EndClass
+
+BegClass Tester
+    DclDB DGDB DBName('*Public/DG NET Local')  
+    
+    BegSr Run Access(*Public)
+        DclFld dgfr Type(DGFileReader) New(DGDB) 
+
+        dgfr = *New DGFileReader(DGDB) 
+        
+        AddHandler SourceObject(dgfr) SourceEvent(AfterRowRead) +
+                   HandlerObject(*This) HandlerSr(OnAfterRowRead) 
+
+        dgfr.ReadEntireFile('Examples', 'CMastNewL2') 
+    EndSr
+    
+    // AfterRowRead event handler. 
+    BegSr OnAfterRowRead
+        DclSrParm Sender Type(*Object)
+        DclSrParm e Type(AfterRowReadArgs) 
+   
+        // Properties passed in through the e parameter:
+        //    e.DataRow -- a System.Data.DataRow representing the row read.
+        //    e.FieldNames -- an array of field names in the DataRow.
+        //    e.CurrentRowCounter -- The current row number. 
+        //    e.CancelRead -- Set to false to cancel the remaining read.
+        //    e.CustomClassInstance -- Instance of custom class. 
+
+        Console.WriteLine(e.DataRow['CMName'].ToString())  
+    EndSr
+EndClass
+
+BegClass TesterWithClass
+    DclDB DGDB DBName('*Public/DG NET Local')  
+    
+    DclFld Customers Type(List(*Of Customer)) New() 
+
+    BegSr Run Access(*Public)
+        DclFld dgfr Type(DGFileReader) New(DGDB) 
+
+        dgfr = *New DGFileReader(DGDB) 
+        dgfr.CustomClassType = *TypeOf(Customer) 
+        
+        AddHandler SourceObject(dgfr) SourceEvent(AfterRowRead) +
+                   HandlerObject(*This) HandlerSr(OnAfterRowRead) 
+
+        dgfr.ReadEntireFile('Examples', 'CMastNewL2') 
+
+        ForEach Cust Type(Customer) Collection(Customers) 
+            Console.WriteLine(Cust.CMName) 
+        EndFor
+    EndSr
+    
+    // AfterRowRead event handler. 
+    BegSr OnAfterRowRead
+        DclSrParm Sender Type(*Object)
+        DclSrParm e Type(AfterRowReadArgs) 
+
+        DclFld Cust Type(Customer) 
+
+        Cust = e.CustomClassInstance *As Customer 
+
+        // Add this row's Cust instance to the collection.
+        Customers.Add(Cust) 
+    EndSr
+EndClass
+
+BegClass Customer Access(*Public)
+    DclProp CMName Type(*Char) Len(40) Access(*Public) 
+    DclProp CMCustNo Type(*Packed) Len(9,0) Access(*Public) 
+
+    DclProp CMAddr1 Type(*Char) Len(35) Access(*Public) 
+    DclProp CMCity Type(*Char) Len(30) Access(*Public) 
+    DclProp CMState Type(*Char) Len(2) Access(*Public) 
+    DclProp CMCntry Type(*Char) Len(2) Access(*Public) 
+    DclProp CMPostCode Type(*Char) Len(10) Access(*Public) 
+    DclProp CMActive Type(*Char) Len(1) Access(*Public) 
+    DclProp CMFax Type(*Packed) Len(10,0) Access(*Public) 
+    DclProp CMPhone Type(*Char) Len(20) Access(*Public) 
+EndClass
